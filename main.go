@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"example.com/rclone-tgbot/config"
 	"example.com/rclone-tgbot/rclone"
 	"gopkg.in/telebot.v3"
 	"gopkg.in/telebot.v3/middleware"
@@ -14,11 +15,12 @@ import (
 
 func main() {
 	releaseIfNotExiest("download_and_unzip.sh", download_and_unzip_sh)
-	releaseIfNotExiest("config.yml", config_yml)
-	var cfg Config
-	readFile(&cfg)
-	readEnv(&cfg)
-	fmt.Println("config: ", cfg)
+	var cfg config.Config
+	cfg.ReadAll()
+	if !fileExists("config.yml") {
+		cfg.WriteFile()
+	}
+	fmt.Printf("config: %+v\n", cfg)
 	sc := rclone.NewServerConfig(cfg.Rclone.Host, cfg.Rclone.User, cfg.Rclone.Password)
 
 	pref := telebot.Settings{
@@ -81,7 +83,7 @@ func main() {
 			c.Send(fmt.Sprintf("%s", err))
 			return err
 		}
-		if fs != "" && containsString(remoteList, fs) {
+		if fs != "" && listContains(remoteList, fs) {
 			remoteFs = fs
 			return c.Send(fmt.Sprintf("Default fs set to '%s'.", fs))
 		} else if fs == "" {

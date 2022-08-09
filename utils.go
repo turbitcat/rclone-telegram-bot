@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -17,17 +16,24 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
-func maxInt(a, b int) int {
+type Number interface {
+	~int | ~int8 | ~int16 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint64 | ~float32 | ~float64
+}
+
+// maxNum returns the larger of two numbers.
+func maxNum[T Number](a, b T) T {
 	if a > b {
 		return a
 	}
 	return b
 }
 
+// lastSubstring returns the last substring of s with length at most n.
 func lastSubstring(s string, n int) string {
-	return s[maxInt(0, len(s)-n):]
+	return s[maxNum(0, len(s)-n):]
 }
 
+// bytesToString converts bytes to a human readable string.
 func bytesToString(b int) string {
 	const (
 		kb = 1024
@@ -48,7 +54,11 @@ func bytesToString(b int) string {
 	}
 }
 
+// runCommendAndGetOutput runs a command and returns the output. OutBuffer is used to store the output, which can be nil.
 func runCommendAndGetOutput(name string, arg []string, outBuffer *bytes.Buffer) error {
+	if outBuffer == nil {
+		outBuffer = &bytes.Buffer{}
+	}
 	cmd := exec.Command(name, arg...)
 	w := io.MultiWriter(outBuffer)
 	cmd.Stdout = w
@@ -56,6 +66,7 @@ func runCommendAndGetOutput(name string, arg []string, outBuffer *bytes.Buffer) 
 	return cmd.Run()
 }
 
+// uploadFile uploads a file from url to remoteFs:remoteDir.
 func uploadurl(sc *rclone.ServerConfig, remoteFs, url string, c telebot.Context, b *telebot.Bot, remoteDir string) error {
 	jobid, err := sc.CopyURL(url, remoteFs, remoteDir, "")
 	if err != nil {
@@ -66,6 +77,7 @@ func uploadurl(sc *rclone.ServerConfig, remoteFs, url string, c telebot.Context,
 	return checkJobStatusAndUpdateMessage(c.Chat(), header, nil, sc, b, jobid)
 }
 
+// unzipanduploadurl downloads a zip file from url to tempDownloadDir, then unzip it and upload to remoteFs:remoteDir.
 func unzipanduploadurl(sc *rclone.ServerConfig, remoteFs, url string, c telebot.Context, b *telebot.Bot, remoteDir, tempDownloadDir string) error {
 	buffer := &bytes.Buffer{}
 	tempdir, err := os.MkdirTemp(tempDownloadDir, "temp")
@@ -103,6 +115,7 @@ func unzipanduploadurl(sc *rclone.ServerConfig, remoteFs, url string, c telebot.
 	return checkJobStatusAndUpdateMessage(c.Chat(), header, msg, sc, b, jobid)
 }
 
+// checkJobStatusAndUpdateMessage checks the status of a Rclone job periodically and updates the message.
 func checkJobStatusAndUpdateMessage(to telebot.Recipient, initMsg string, msg *telebot.Message, sc *rclone.ServerConfig, b *telebot.Bot, jobid int) error {
 	if msg == nil {
 		var err error
@@ -144,21 +157,26 @@ func checkJobStatusAndUpdateMessage(to telebot.Recipient, initMsg string, msg *t
 	}
 }
 
+// fileExists returns true if the file exists.
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
+// releaseIfNotExiest checks if a file exists, and if not, create one with the given content.
 func releaseIfNotExiest(name, data string) error {
-	if _, err := os.Stat(name); err == nil {
+	if fileExists(name) {
 		return nil
-	} else if errors.Is(err, os.ErrNotExist) {
+	} else {
 		if err := os.MkdirAll(path.Dir(name), fs.FileMode(0660)); err != nil {
 			return err
 		}
 		return ioutil.WriteFile(name, []byte(data), fs.FileMode(0660))
-
-	} else {
-		return err
 	}
 }
 
-func containsString(a []string, s string) bool {
+// listContains checks if a value is in a list.
+func listContains[T comparable](a []T, s T) bool {
 	for _, t := range a {
 		if t == s {
 			return true
@@ -167,19 +185,23 @@ func containsString(a []string, s string) bool {
 	return false
 }
 
+// stringCatch maintains a list of strings.
 type stringCatch map[string]string
 
+// New adds a string to the stringCatch, returns the key.
 func (sc stringCatch) New(s string) string {
 	key := uuid.NewString()
 	sc[key] = s
 	return key
 }
 
+// Get returns the string with the given key.
 func (sc stringCatch) Get(k string) (string, bool) {
 	v, ok := sc[k]
 	return v, ok
 }
 
+// Pop removes and returns the string with the given key.
 func (sc stringCatch) Pop(k string) (string, bool) {
 	v, ok := sc[k]
 	delete(sc, k)
