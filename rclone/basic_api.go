@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// ServerConfig holds the information used to connect to a Clone rcd http server.
-type ServerConfig struct {
+// RcloneServer holds the information used to connect to a Clone rcd http server.
+type RcloneServer struct {
 	// URL used to connect to the http server.
 	// End with '/'. For example, "http://localhost:5572/"
 	Server string
@@ -20,31 +20,28 @@ type ServerConfig struct {
 	Password string
 }
 
-// NewServerConfig returns a new ServerConfig.
-func NewServerConfig(server string, user string, password string) *ServerConfig {
+// NewRcloneServer returns a new ServerConfig.
+func NewRcloneServer(server string, user string, password string) *RcloneServer {
 	if !strings.HasSuffix(server, "/") {
 		server = server + "/"
 	}
-	return &ServerConfig{Server: server, User: user, Password: password}
+	return &RcloneServer{Server: server, User: user, Password: password}
 }
 
-// Submit a asynchronous job to the server.
-//
-// 'path' is the rclone API, such as 'core/stats'.
-// 'input' is the input which is going to be encoded to JSON format and put in the request body.
-func (sc *ServerConfig) Do(path string, input any) ([]byte, error) {
-	body, err := json.Marshal(input)
+// Do calls the server's rcd api and returns the response body.
+func (rs *RcloneServer) Do(method string, payload any) ([]byte, error) {
+	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("json marshal request error: %v", err)
 	}
-	questURL := sc.Server + path
+	questURL := rs.Server + method
 	req, err := http.NewRequest("POST", questURL, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create http request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if sc.User != "" {
-		req.SetBasicAuth(sc.User, sc.Password)
+	if rs.User != "" {
+		req.SetBasicAuth(rs.User, rs.Password)
 	}
 	client := http.Client{}
 	resp, err := client.Do(req)
@@ -71,11 +68,11 @@ func (sc *ServerConfig) Do(path string, input any) ([]byte, error) {
 	}
 }
 
-// DoAsync returns the JobID for the submitted job.
+// DoAsync submits a asynchronous job using Rclone rcd api and returns the JobID for the submitted job.
 // "_async" will be set in request url as a param.
-func (sc *ServerConfig) DoAsync(path string, input any) (int, error) {
-	path = addParamToURL(path, "_async=true")
-	body, err := sc.Do(path, input)
+func (rs *RcloneServer) DoAsync(method string, payload any) (int, error) {
+	method = addParamToURL(method, "_async=true")
+	body, err := rs.Do(method, payload)
 	if err != nil {
 		return -1, err
 	}

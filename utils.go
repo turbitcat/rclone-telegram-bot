@@ -67,18 +67,18 @@ func runCommendAndGetOutput(name string, arg []string, outBuffer *bytes.Buffer) 
 }
 
 // uploadFile uploads a file from url to remoteFs:remoteDir.
-func uploadurl(sc *rclone.ServerConfig, remoteFs, url string, c telebot.Context, b *telebot.Bot, remoteDir string) error {
-	jobid, err := sc.CopyURL(url, remoteFs, remoteDir, "")
+func uploadurl(rs *rclone.RcloneServer, remoteFs, url string, c telebot.Context, b *telebot.Bot, remoteDir string) error {
+	jobid, err := rs.CopyURL(url, remoteFs, remoteDir, "")
 	if err != nil {
 		c.Send(err.Error())
 		return err
 	}
 	header := fmt.Sprintf("Uploading %.512s to %s:%s...", rclone.RetrieveFileNameFromURL(url), remoteFs, remoteDir)
-	return checkJobStatusAndUpdateMessage(c.Chat(), header, nil, sc, b, jobid)
+	return checkJobStatusAndUpdateMessage(c.Chat(), header, nil, rs, b, jobid)
 }
 
 // unzipanduploadurl downloads a zip file from url to tempDownloadDir, then unzip it and upload to remoteFs:remoteDir.
-func unzipanduploadurl(sc *rclone.ServerConfig, remoteFs, url string, c telebot.Context, b *telebot.Bot, remoteDir, tempDownloadDir string) error {
+func unzipanduploadurl(rs *rclone.RcloneServer, remoteFs, url string, c telebot.Context, b *telebot.Bot, remoteDir, tempDownloadDir string) error {
 	buffer := &bytes.Buffer{}
 	tempdir, err := os.MkdirTemp(tempDownloadDir, "temp")
 	if err != nil {
@@ -107,16 +107,16 @@ func unzipanduploadurl(sc *rclone.ServerConfig, remoteFs, url string, c telebot.
 		return err
 	}
 	cmdDone <- struct{}{}
-	jobid, err := sc.Copy(tempdir, remoteFs+":"+remoteDir)
+	jobid, err := rs.Copy(tempdir, remoteFs+":"+remoteDir)
 	if err != nil {
 		return err
 	}
 	header := fmt.Sprintf("Uploading %.512s(%.64s) to %s:%s...", rclone.RetrieveFileNameFromURL(url), url, remoteFs, remoteDir)
-	return checkJobStatusAndUpdateMessage(c.Chat(), header, msg, sc, b, jobid)
+	return checkJobStatusAndUpdateMessage(c.Chat(), header, msg, rs, b, jobid)
 }
 
 // checkJobStatusAndUpdateMessage checks the status of a Rclone job periodically and updates the message.
-func checkJobStatusAndUpdateMessage(to telebot.Recipient, initMsg string, msg *telebot.Message, sc *rclone.ServerConfig, b *telebot.Bot, jobid int) error {
+func checkJobStatusAndUpdateMessage(to telebot.Recipient, initMsg string, msg *telebot.Message, rs *rclone.RcloneServer, b *telebot.Bot, jobid int) error {
 	if msg == nil {
 		var err error
 		msg, err = b.Send(to, initMsg)
@@ -125,7 +125,7 @@ func checkJobStatusAndUpdateMessage(to telebot.Recipient, initMsg string, msg *t
 		}
 	}
 	for {
-		status, err := sc.CheckJobStatus(jobid)
+		status, err := rs.CheckJobStatusAndCoreStats(jobid)
 		if err != nil {
 			b.Edit(msg, err.Error())
 			return err

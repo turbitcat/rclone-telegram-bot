@@ -4,6 +4,7 @@ import (
 	"strings"
 )
 
+// Remove '\n' from a string.
 func removeNewlines(s string) string {
 	return strings.Replace(s, "\n", " ", -1)
 }

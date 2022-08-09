@@ -11,8 +11,9 @@ type ListremotesResponse struct {
 	Remotes []string
 }
 
-func (sc *ServerConfig) ListRemotes() ([]string, error) {
-	body, err := sc.Do("config/listremotes", nil)
+// ListRemotes returns a list of avalible remotes.
+func (rs *RcloneServer) ListRemotes() ([]string, error) {
+	body, err := rs.Do(ConfigListremotes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("listremotes: %v", err)
 	}

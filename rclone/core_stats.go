@@ -1,5 +1,7 @@
 package rclone
 
+import "encoding/json"
+
 // json struct:
 // core/stats
 type StatsRequest struct {
@@ -39,4 +41,16 @@ type StatsResponsTransfering struct {
 	Speed            float32 // average speed over the whole transfer in bytes per second,
 	SpeedAvg         float32 // current speed in bytes per second as an exponentially weighted moving average,
 	ToTalBytes       int     `json:"size"` // size of the file in bytes
+}
+
+func (rs *RcloneServer) CheckCoreStats(group string) (*StatsResponse, error) {
+	body, err := rs.Do(CoreStats, StatsRequest{group})
+	if err != nil {
+		return nil, err
+	}
+	respons := StatsResponse{}
+	if err := json.Unmarshal(body, &respons); err != nil {
+		return nil, err
+	}
+	return &respons, nil
 }

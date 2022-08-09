@@ -1,5 +1,7 @@
 package rclone
 
+import "encoding/json"
+
 // json struct:
 // job/status
 type JobStatusRequest struct {
@@ -19,4 +21,16 @@ type JobStatusResponse struct {
 	Success   bool           // boolean - true for success false otherwise
 	Output    map[string]any // output of the job as would have been returned if called synchronously
 	Progress  string         // output of the progress related to the underlying job
+}
+
+func (rs *RcloneServer) CheckJobStatus(jobid int) (*JobStatusResponse, error) {
+	body, err := rs.Do(JobStatus, JobStatusRequest{JobID: jobid})
+	if err != nil {
+		return nil, err
+	}
+	jResp := JobStatusResponse{}
+	if err := json.Unmarshal(body, &jResp); err != nil {
+		return nil, err
+	}
+	return &jResp, nil
 }

@@ -21,7 +21,7 @@ func main() {
 		cfg.WriteFile()
 	}
 	fmt.Printf("config: %+v\n", cfg)
-	sc := rclone.NewServerConfig(cfg.Rclone.Host, cfg.Rclone.User, cfg.Rclone.Password)
+	rs := rclone.NewRcloneServer(cfg.Rclone.Host, cfg.Rclone.User, cfg.Rclone.Password)
 
 	pref := telebot.Settings{
 		Token:  cfg.TelegramBot.Token,
@@ -34,7 +34,7 @@ func main() {
 		return
 	}
 
-	remoteList, _ := sc.ListRemotes()
+	remoteList, _ := rs.ListRemotes()
 	var remoteFs string
 	if len(remoteList) > 0 {
 		remoteFs = remoteList[0]
@@ -68,7 +68,7 @@ func main() {
 	})
 
 	adminOnly.Handle("/listremote", func(c telebot.Context) error {
-		remoteList, err := sc.ListRemotes()
+		remoteList, err := rs.ListRemotes()
 		if err != nil {
 			c.Send(fmt.Sprintf("%s", err))
 			return err
@@ -78,7 +78,7 @@ func main() {
 
 	adminOnly.Handle("/setdefaultfs", func(c telebot.Context) error {
 		fs := c.Message().Payload
-		remoteList, err := sc.ListRemotes()
+		remoteList, err := rs.ListRemotes()
 		if err != nil {
 			c.Send(fmt.Sprintf("%s", err))
 			return err
@@ -94,11 +94,11 @@ func main() {
 	})
 
 	adminOnly.Handle("/unzipanduploadurl", func(c telebot.Context) error {
-		return unzipanduploadurl(sc, remoteFs, c.Message().Payload, c, b, remoteDir, cfg.TempPath.Download)
+		return unzipanduploadurl(rs, remoteFs, c.Message().Payload, c, b, remoteDir, cfg.TempPath.Download)
 	})
 
 	adminOnly.Handle("/uploadurl", func(c telebot.Context) error {
-		return uploadurl(sc, remoteFs, c.Message().Payload, c, b, remoteDir)
+		return uploadurl(rs, remoteFs, c.Message().Payload, c, b, remoteDir)
 	})
 
 	newURLSelector := func(s string) (*telebot.ReplyMarkup, *telebot.Btn, *telebot.Btn) {
@@ -123,7 +123,7 @@ func main() {
 		k := c.Data()
 		if k != "" {
 			if url, ok := urlCache.Get(k); ok {
-				return uploadurl(sc, remoteFs, url, c, b, remoteDir)
+				return uploadurl(rs, remoteFs, url, c, b, remoteDir)
 			}
 		}
 		return nil
@@ -134,7 +134,7 @@ func main() {
 		k := c.Data()
 		if k != "" {
 			if url, ok := urlCache.Get(k); ok {
-				return unzipanduploadurl(sc, remoteFs, url, c, b, remoteDir, cfg.TempPath.Download)
+				return unzipanduploadurl(rs, remoteFs, url, c, b, remoteDir, cfg.TempPath.Download)
 			}
 		}
 		return nil

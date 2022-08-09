@@ -28,7 +28,7 @@ func RetrieveFileNameFromURL(u string) string {
 //
 // 'fs' is a remote name string e.g. "drive:". 'remotePath' is a path within that remote.
 // 'filename' is the saved file's name, if empty the filename will be retrieved from url.
-func (sc *ServerConfig) CopyURL(u, fs, remotePath, filename string) (int, error) {
+func (rs *RcloneServer) CopyURL(u, fs, remotePath, filename string) (int, error) {
 	if filename == "" {
 		filename = RetrieveFileNameFromURL(u)
 	}
@@ -41,7 +41,7 @@ func (sc *ServerConfig) CopyURL(u, fs, remotePath, filename string) (int, error)
 		fs = fs + ":"
 	}
 	request := CopyURLRequest{Fs: fs, Remote: remotePath, URL: u, AutoFilename: false}
-	jobid, err := sc.DoAsync("operations/copyurl", request)
+	jobid, err := rs.DoAsync(OperationsCopyurl, request)
 	if err != nil {
 		return -1, fmt.Errorf("copyurl err : %v", err)
 	}
