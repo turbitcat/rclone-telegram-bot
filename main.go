@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"example.com/rclone-tgbot/config"
-	"example.com/rclone-tgbot/rclone"
+	"github.com/turbitcat/rclone-telegram-bot/config"
+	"github.com/turbitcat/rclone-telegram-bot/rclone"
 	"gopkg.in/telebot.v3"
 	"gopkg.in/telebot.v3/middleware"
 )
@@ -21,7 +21,7 @@ func main() {
 		cfg.WriteFile()
 	}
 	fmt.Printf("config: %+v\n", cfg)
-	rs := rclone.NewRcloneServer(cfg.Rclone.Host, cfg.Rclone.User, cfg.Rclone.Password)
+	rs := rclone.NewRcloneServer(cfg.Rclone.BaseURL, cfg.Rclone.User, cfg.Rclone.Password)
 
 	pref := telebot.Settings{
 		Token:  cfg.TelegramBot.Token,

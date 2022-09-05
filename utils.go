@@ -11,8 +11,8 @@ import (
 	"path"
 	"time"
 
-	"example.com/rclone-tgbot/rclone"
 	"github.com/google/uuid"
+	"github.com/turbitcat/rclone-telegram-bot/rclone"
 	"gopkg.in/telebot.v3"
 )
 

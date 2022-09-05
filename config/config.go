@@ -15,7 +15,7 @@ type Config struct {
 		AdminIDs string `yaml:"admin_ids" envconfig:"BOT_ADMINIDS"`
 	} `yaml:"telegram-bot"`
 	Rclone struct {
-		Host     string `yaml:"host" envconfig:"RCLONE_HOST"`
+		BaseURL  string `yaml:"host" envconfig:"RCLONE_HOST"`
 		User     string `yaml:"user" envconfig:"RCLONE_USER"`
 		Password string `yaml:"password" envconfig:"RCLONE_PASSWORD"`
 	} `yaml:"rclone"`

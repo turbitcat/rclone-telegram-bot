@@ -1,4 +1,4 @@
-module example.com/rclone-tgbot
+module github.com/turbitcat/rclone-telegram-bot
 
 go 1.18
 
